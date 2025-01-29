@@ -13,7 +13,11 @@ class PokemonEntity(models.Model):
     Lon = models.FloatField()
     Appeared_at = models.DateTimeField()
     Disappeared_at = models.DateTimeField()
-
+    Level = models.IntegerField()
+    Health = models.IntegerField()
+    Strength = models.IntegerField()
+    Defence = models.IntegerField()
+    Stamina = models.IntegerField()
 
     def __str__(self):
         return f"{self.Lat} , {self.Lon}"
