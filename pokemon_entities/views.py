@@ -2,7 +2,7 @@ import folium
 import json
 from pokemon_entities.models import Pokemon,PokemonEntity
 from django.http import HttpResponseNotFound
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.utils.timezone import localtime
 
 
@@ -56,20 +56,17 @@ def show_all_pokemons(request):
 
 def show_pokemon(request, pokemon_id):
     now = localtime().now()
-    pokemons = Pokemon.objects.filter(id=pokemon_id)
+    pokemon = get_object_or_404(Pokemon,id=pokemon_id)
+    requested_pokemon = {
+        "title_ru": pokemon.title,
+        "img_url": request.build_absolute_uri(pokemon.image.url),
+        "description": pokemon.description,
+        "title_en": pokemon.title_en,
+        "title_jp": pokemon.title_jp,
+    }
 
-    for pokemon in pokemons:
-        if pokemon.id == int(pokemon_id):
-            requested_pokemon = {
-                "title_ru": pokemon.title,
-                "img_url": request.build_absolute_uri(pokemon.image.url),
-                "description": pokemon.description,
-                "title_en": pokemon.title_en,
-                "title_jp": pokemon.title_jp,
-            }
-            break
-    else:
-        return HttpResponseNotFound('<h1>Такой покемон не найден</h1>')
+
+
 
     folium_map = folium.Map(location=MOSCOW_CENTER, zoom_start=12)
     for pokemon_entity in PokemonEntity.objects.filter(pokemon=pokemon,appeared_at__lt = now,disappeared_at__gt = now):
@@ -78,6 +75,13 @@ def show_pokemon(request, pokemon_id):
             pokemon_entity.lon,
             request.build_absolute_uri(pokemon.image.url)
         )
+    previous_pokemon = pokemon.old_evolution
+    if previous_pokemon:
+        requested_pokemon["previous_evolution"] = {
+            "title_ru": pokemon.old_evolution.title,
+            "pokemon_id": pokemon.old_evolution.id,
+            "img_url": request.build_absolute_uri(pokemon.old_evolution.image.url)
+        }
 
     return render(request, 'pokemon.html', context={
         'map': folium_map._repr_html_(), 'pokemon': requested_pokemon
